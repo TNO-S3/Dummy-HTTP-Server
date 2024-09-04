@@ -16,6 +16,7 @@ struct Args {
     verbose: bool,
 }
 
+/// Start the HTTP server. Exits on connectivity problems.
 fn main() -> Result<(), anyhow::Error> {
     let args = Args::parse();
 
@@ -31,11 +32,16 @@ fn main() -> Result<(), anyhow::Error> {
     Ok(())
 }
 
+/// Handle an incoming HTTP request, printing it to stdout and answering '200 OK'
 fn handle_connection(mut stream: TcpStream, verbose: bool) -> Result<(), anyhow::Error> {
     let mut buf_reader = BufReader::new(&mut stream);
     let mut http_request = Vec::new();
     let mut content_length = 0;
 
+    // Read the HTTP request headers into a Vec of lines. While doing so, look for a
+    // Content-Length header, which would indicate that a body follows. Stop at an
+    // empty line, which indicates the end of the request headers and possible start
+    // of the body.
     loop {
         let mut line = String::new();
         buf_reader.read_line(&mut line)?;
@@ -53,12 +59,14 @@ fn handle_connection(mut stream: TcpStream, verbose: bool) -> Result<(), anyhow:
         http_request.push(trimmed_line.to_owned());
     }
 
+    // Print the request's first line, and if '--verbose', all other lines too
     if verbose {
         println!("Request: {:#?}\n", http_request);
     } else {
         println!("Request: {}", http_request[0]);
     }
 
+    // If body content was announced by the Content-Length header, read and print it
     if content_length > 0 {
         println!("Body:");
         let mut body = vec![0u8; content_length];
@@ -66,6 +74,7 @@ fn handle_connection(mut stream: TcpStream, verbose: bool) -> Result<(), anyhow:
         println!("{}\n", String::from_utf8_lossy(&body));
     }
 
+    // Respond "200 OK" to all requests
     let response = "HTTP/1.1 200 OK\r\n\r\n";
     stream.write_all(response.as_bytes())?;
     Ok(())
