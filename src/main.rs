@@ -59,7 +59,9 @@ fn handle_connection(mut stream: TcpStream, verbose: bool) -> Result<(), anyhow:
         http_request.push(trimmed_line.to_owned());
     }
 
-    if !http_request.is_empty() {
+    if http_request.is_empty() {
+        println!("<empty request>");
+    } else {
         // Print the request's first line, and if '--verbose', all other lines too
         if verbose {
             println!("Request: {:#?}\n", http_request);
