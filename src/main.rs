@@ -59,19 +59,23 @@ fn handle_connection(mut stream: TcpStream, verbose: bool) -> Result<(), anyhow:
         http_request.push(trimmed_line.to_owned());
     }
 
-    // Print the request's first line, and if '--verbose', all other lines too
-    if verbose {
-        println!("Request: {:#?}\n", http_request);
+    if http_request.is_empty() {
+        println!("<empty request>");
     } else {
-        println!("Request: {}", http_request[0]);
-    }
+        // Print the request's first line, and if '--verbose', all other lines too
+        if verbose {
+            println!("Request: {:#?}\n", http_request);
+        } else {
+            println!("Request: {}", http_request[0]);
+        }
 
-    // If body content was announced by the Content-Length header, read and print it
-    if content_length > 0 {
-        println!("Body:");
-        let mut body = vec![0u8; content_length];
-        buf_reader.read_exact(&mut body)?;
-        println!("{}\n", String::from_utf8_lossy(&body));
+        // If body content was announced by the Content-Length header, read and print it
+        if content_length > 0 {
+            println!("Body:");
+            let mut body = vec![0u8; content_length];
+            buf_reader.read_exact(&mut body)?;
+            println!("{}\n", String::from_utf8_lossy(&body));
+        }
     }
 
     // Respond "200 OK" to all requests
