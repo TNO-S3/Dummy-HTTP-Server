@@ -43,8 +43,9 @@ fn handle_connection(mut stream: TcpStream, verbose: bool) -> Result<(), anyhow:
     // empty line, which indicates the end of the request headers and possible start
     // of the body.
     loop {
-        let mut line = String::new();
-        buf_reader.read_line(&mut line)?;
+        let mut line = Vec::new();
+        buf_reader.read_until(0xa, &mut line)?;
+        let line = String::from_utf8_lossy(&line);
         let trimmed_line = line.trim();
         if trimmed_line.is_empty() {
             break;
